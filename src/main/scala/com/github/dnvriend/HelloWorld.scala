@@ -7,7 +7,7 @@ import com.typesafe.config.{ Config, ConfigFactory }
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 
-object ConnPool {
+object DB {
   def toProps(config: Config): Properties = {
     val properties = new java.util.Properties
     config.entrySet.forEach((e) => properties.setProperty(e.getKey, config.getString(e.getKey)))
@@ -15,7 +15,10 @@ object ConnPool {
   }
   val config: HikariConfig = new HikariConfig(toProps(ConfigFactory.load().getObject("db").toConfig))
   val ds: HikariDataSource = new HikariDataSource(config)
-  implicit def getConnection: java.sql.Connection = ds.getConnection
+  def withConnection[A](f: java.sql.Connection => A): A = {
+    val conn: java.sql.Connection = ds.getConnection
+    try f(conn) finally conn.close()
+  }
 }
 
 object Person {
@@ -23,17 +26,18 @@ object Person {
 }
 final case class Person(name: String, age: Int)
 object HelloWorld extends App {
-  import ConnPool.getConnection
-  SQL"""
+  DB.withConnection { implicit conn =>
+    SQL"""
       CREATE TABLE IF NOT EXISTS PERSON(
        name VARCHAR,
        age NUMERIC
       )
     """ executeUpdate ()
 
-  SQL"INSERT INTO person values ('dennis', 43)" executeUpdate ()
+    SQL"INSERT INTO person values ('dennis', 43)" executeUpdate ()
 
-  val xs: Seq[Person] = SQL"SELECT * FROM PERSON".as(Person.parser.*)
-  xs foreach println
+    val xs: Seq[Person] = SQL"SELECT * FROM PERSON".as(Person.parser.*)
+    xs foreach println
+  }
 }
 
