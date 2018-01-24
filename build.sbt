@@ -14,6 +14,7 @@ libraryDependencies += "org.playframework.anorm" %% "anorm" % "2.6.0"
 libraryDependencies += "org.playframework.anorm" %% "anorm-postgres" % "2.6.0"
 libraryDependencies += "com.zaxxer" % "HikariCP" % "2.7.6"
 libraryDependencies += "com.typesafe" % "config" % "1.3.2"
+libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 // testing configuration
 fork in Test := true
